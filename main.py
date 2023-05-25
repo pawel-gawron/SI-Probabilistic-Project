@@ -12,38 +12,69 @@ import argparse
 import matplotlib.pyplot as plt
 
 def calcHistBoundBox(boundBox):
-    histR = cv2.calcHist([boundBox],[2],None,[256],[0,256])
-    histG = cv2.calcHist([boundBox],[1],None,[256],[0,256])
-    histB = cv2.calcHist([boundBox],[0],None,[256],[0,256])
-    # plt.plot(histR,color = 'red')
-    # plt.plot(histG,color = 'green')
-    # plt.plot(histB,color = 'blue')
-    # plt.xlim([0,256])
-    # cv2.imshow("image", boundBox)
+    h_ranges = [0, 180]
+    s_ranges = [0, 256]
+    v_ranges = [0, 256]
+
+    h_bins = 50
+    s_bins = 60
+    v_bins = 60
+
+    histH = cv2.calcHist([boundBox],[0], None, [h_bins], h_ranges, accumulate=False)
+    cv2.normalize(histH, histH, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+    histS = cv2.calcHist([boundBox],[1], None, [s_bins], s_ranges, accumulate=False)
+    cv2.normalize(histS, histS, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+    histV = cv2.calcHist([boundBox],[2], None, [v_bins], v_ranges, accumulate=False)
+    cv2.normalize(histV, histV, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+    # plt.plot(histH,color = 'red')
+    # plt.plot(histS,color = 'green')
+    # plt.plot(histV,color = 'blue')
+    # boundBox_bgr = cv2.cvtColor(boundBox, cv2.COLOR_HSV2BGR)
+    # plt.imshow(boundBox_bgr)
+    # plt.axis('off')
+    # plt.show()
+    # cv2.imshow("image", boundBox_bgr)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows
     # plt.show()
 
-    return [histR, histG, histB]
+    boundBox_rgb = cv2.cvtColor(boundBox, cv2.COLOR_HSV2RGB)
+    plt.imshow(boundBox_rgb)
+    plt.axis('off')
+    plt.show()
+
+    return [histH, histS, histV]
 
 def compareHistBoundBox(boundBox1, boundBox2):
     print(None)
+
+    for bb1 in range(len(boundBox1)):
+        for bb1 in range(len(boundBox2)):
+            histComp1 = cv2.compareHist(boundBox1, boundBox2, cv2.HISTCMP_BHATTACHARYYA)
+            histComp2 = cv2.compareHist(boundBox1, boundBox2, cv2.HISTCMP_BHATTACHARYYA)
+            histComp3 = cv2.compareHist(boundBox1, boundBox2, cv2.HISTCMP_BHATTACHARYYA)
 
 
 def computeProbability(imagePath, boundingBoxPath):
     imagesPath = imagePath
     boundingBoxFile = boundingBoxPath
 
-    for i in range(len(imagesPath)):
+    for imageNumber in range(len(imagesPath)):
         coordinatesBoundingBoxes = []
+        histograms = []
         imageName = boundingBoxFile.readline().rstrip("\n")
-        image = cv2.imread(str(imagePath[i]))
+        image = cv2.imread(str(imagePath[imageNumber]), cv2.COLOR_HSV2BGR)
 
 
         # print(imageName)
 
         if not imageName:
             break
+
+        print("imageName: ", imageName)
 
         boundingBoxNumber = boundingBoxFile.readline().rstrip("\n")
         # print(boundingBoxNumber)
@@ -55,8 +86,26 @@ def computeProbability(imagePath, boundingBoxPath):
             y = int(float(coordinates[1]))
             w = int(float(coordinates[2]))
             h = int(float(coordinates[3]))
-            calcHistBoundBox(image[y:y+h, x:x+w])
-            # cv2.imshow("image", image[y:y+h, x:x+w])
+            # histograms.append(calcHistBoundBox(image[y:y+h, x:x+w]))
+
+            h_ranges = [0, 180]
+            s_ranges = [0, 256]
+            v_ranges = [0, 256]
+
+            h_bins = 50
+            s_bins = 60
+            v_bins = 60
+
+            histH = cv2.calcHist([image[y:y+h, x:x+w]],[0], None, [h_bins], h_ranges, accumulate=False)
+            cv2.normalize(histH, histH, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+
+            plt.plot(histH,color = 'red')
+            # print(cv2.cvtColor(image[y:y+h, x:x+w], cv2.COLOR_HSV2RGB))
+            plt.show()
+
+            # plt.imshow(image[y:y+h, x:x+w])
+            # plt.axis('off')
+            # plt.show()
             # cv2.waitKey(0)
             # cv2.destroyAllWindows
 
