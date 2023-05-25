@@ -9,6 +9,26 @@ import numpy as np
 import cv2
 import os
 import argparse
+import matplotlib.pyplot as plt
+
+def calcHistBoundBox(boundBox):
+    histR = cv2.calcHist([boundBox],[2],None,[256],[0,256])
+    histG = cv2.calcHist([boundBox],[1],None,[256],[0,256])
+    histB = cv2.calcHist([boundBox],[0],None,[256],[0,256])
+    # plt.plot(histR,color = 'red')
+    # plt.plot(histG,color = 'green')
+    # plt.plot(histB,color = 'blue')
+    # plt.xlim([0,256])
+    # cv2.imshow("image", boundBox)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows
+    # plt.show()
+
+    return [histR, histG, histB]
+
+def compareHistBoundBox(boundBox1, boundBox2):
+    print(None)
+
 
 def computeProbability(imagePath, boundingBoxPath):
     imagesPath = imagePath
@@ -35,9 +55,10 @@ def computeProbability(imagePath, boundingBoxPath):
             y = int(float(coordinates[1]))
             w = int(float(coordinates[2]))
             h = int(float(coordinates[3]))
-            cv2.imshow("image", image[y:y+h, x:x+w])
-            cv2.waitKey(0)
-            cv2.destroyAllWindows
+            calcHistBoundBox(image[y:y+h, x:x+w])
+            # cv2.imshow("image", image[y:y+h, x:x+w])
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows
 
 
 if __name__ == '__main__':
