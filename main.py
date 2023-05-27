@@ -1,4 +1,4 @@
-from pgmpy.models import BayesianModel
+from pgmpy.models import BayesianModel, FactorGraph
 from pgmpy.factors.discrete import TabularCPD
 from pgmpy.inference import VariableElimination
 from pgmpy.factors.discrete import JointProbabilityDistribution
@@ -53,8 +53,8 @@ def calcHistBoundBox(boundBox):
 def compareHistBoundBox(boundBoxesPreviousHist, boundBoxesCurrentHist):
     similarityVect = []
 
-    for counterPrev, histPrev in enumerate(boundBoxesPreviousHist):
-        for counterCurr, histCurr in enumerate(boundBoxesCurrentHist):
+    for counterPrev, histPrev in enumerate(boundBoxesCurrentHist):
+        for counterCurr, histCurr in enumerate(boundBoxesPreviousHist):
             histCompH = cv2.compareHist(histPrev[counterPrev][0], histCurr[counterCurr][0], cv2.HISTCMP_BHATTACHARYYA)
             histCompS = cv2.compareHist(histPrev[counterPrev][1], histCurr[counterCurr][1], cv2.HISTCMP_BHATTACHARYYA)
             histCompV = cv2.compareHist(histPrev[counterPrev][2], histCurr[counterCurr][2], cv2.HISTCMP_BHATTACHARYYA)
@@ -74,6 +74,8 @@ def computeProbability(imagePath, boundingBoxPath):
 
     for imageNumber in range(len(imagesPath)):
         coordinatesBoundingBoxes = []
+        nodes = []
+        factorGraph = FactorGraph()
         imageName = boundingBoxFile.readline().rstrip("\n")
         image = cv2.imread(str(imagePath[imageNumber]))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -101,7 +103,8 @@ def computeProbability(imagePath, boundingBoxPath):
 
         histogramsPrev = histogramsCurrent
         histogramsCurrent = []
-        for _ in range(int(boundingBoxNumber)):
+        for bbObject in range(int(boundingBoxNumber)):
+            nodes.append("Camera object_" + str(bbObject))
             coordinates = boundingBoxFile.readline().rstrip("\n").split(" ")
             coordinatesBoundingBoxes.append(coordinates)
             x = int(float(coordinates[0]))
@@ -109,6 +112,8 @@ def computeProbability(imagePath, boundingBoxPath):
             w = int(float(coordinates[2]))
             h = int(float(coordinates[3]))
             histogramsCurrent.append(calcHistBoundBox(image[y:y+h, x:x+w]))
+
+        factorGraph.add_nodes_from(nodes)
 
         if boundingBoxNumberPrev != None:
             comp = compareHistBoundBox(histogramsPrev, histogramsCurrent)
