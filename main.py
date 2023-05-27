@@ -37,7 +37,7 @@ def calcHistBoundBox(boundBox):
     # boundBox_bgr = cv2.cvtColor(boundBox, cv2.COLOR_HSV2BGR)
     # plt.imshow(boundBox_bgr)
     # plt.axis('off')
-    plt.show()
+    # plt.show()
     # cv2.imshow("image", boundBox_bgr)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows
@@ -68,29 +68,40 @@ def compareHistBoundBox(boundBoxesPreviousHist, boundBoxesCurrentHist):
 def computeProbability(imagePath, boundingBoxPath):
     imagesPath = imagePath
     boundingBoxFile = boundingBoxPath
+    boundingBoxNumberPrev = None
+    histogramsPrev = []
+    histogramsCurrent = []
 
     for imageNumber in range(len(imagesPath)):
         coordinatesBoundingBoxes = []
-        histogramsCurrent = []
         imageName = boundingBoxFile.readline().rstrip("\n")
         image = cv2.imread(str(imagePath[imageNumber]))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
 
         # print(imageName)
 
         if not imageName:
             break
 
-        print("imageName: ", imageName)
+        # print("imageName: ", imageName)
 
         boundingBoxNumber = boundingBoxFile.readline().rstrip("\n")
         # print(boundingBoxNumber)
 
         if boundingBoxNumber == 0:
-            print('')
+            boundingBoxNumberPrev = boundingBoxNumber
+            continue
 
-        for bb in range(int(boundingBoxNumber)):
+        if boundingBoxNumberPrev == 0 or imageNumber == 0:
+            boundingBoxNumberPrev = None
+            histogramsPrev = histogramsCurrent
+
+            for _ in range(int(float(boundingBoxNumber))):
+                print("-1 ")
+
+        histogramsPrev = histogramsCurrent
+        histogramsCurrent = []
+        for _ in range(int(boundingBoxNumber)):
             coordinates = boundingBoxFile.readline().rstrip("\n").split(" ")
             coordinatesBoundingBoxes.append(coordinates)
             x = int(float(coordinates[0]))
@@ -99,8 +110,9 @@ def computeProbability(imagePath, boundingBoxPath):
             h = int(float(coordinates[3]))
             histogramsCurrent.append(calcHistBoundBox(image[y:y+h, x:x+w]))
 
-        comp = compareHistBoundBox(histogramsCurrent, histogramsCurrent)
-        print(comp)
+        if boundingBoxNumberPrev != None:
+            comp = compareHistBoundBox(histogramsPrev, histogramsCurrent)
+            print(comp)
 
 
 if __name__ == '__main__':
