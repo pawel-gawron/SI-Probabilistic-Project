@@ -20,6 +20,8 @@ def calcHistBoundBox(boundBox):
     s_bins = 60
     v_bins = 60
 
+    boundBox = cv2.resize(boundBox, (500, 500))
+
     histH = cv2.calcHist([boundBox],[0], None, [h_bins], h_ranges, accumulate=False)
     cv2.normalize(histH, histH, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
 
@@ -32,30 +34,35 @@ def calcHistBoundBox(boundBox):
     plt.plot(histH,color = 'red')
     plt.plot(histS,color = 'green')
     plt.plot(histV,color = 'blue')
-    boundBox_bgr = cv2.cvtColor(boundBox, cv2.COLOR_HSV2BGR)
-    plt.imshow(boundBox_bgr)
-    plt.axis('off')
+    # boundBox_bgr = cv2.cvtColor(boundBox, cv2.COLOR_HSV2BGR)
+    # plt.imshow(boundBox_bgr)
+    # plt.axis('off')
     plt.show()
-    cv2.imshow("image", boundBox_bgr)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows
-    plt.show()
+    # cv2.imshow("image", boundBox_bgr)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows
+    # plt.show()
 
-    boundBox_rgb = cv2.cvtColor(boundBox, cv2.COLOR_HSV2RGB)
-    plt.imshow(boundBox_rgb)
-    plt.axis('off')
-    plt.show()
+    # boundBox_rgb = cv2.cvtColor(boundBox, cv2.COLOR_HSV2RGB)
+    # plt.imshow(boundBox_rgb)
+    # plt.axis('off')
+    # plt.show()
 
     return [histH, histS, histV]
 
-def compareHistBoundBox(boundBox1, boundBox2):
-    print(None)
+def compareHistBoundBox(boundBoxesPreviousHist, boundBoxesCurrentHist):
+    similarityVect = []
 
-    for bb1 in range(len(boundBox1)):
-        for bb1 in range(len(boundBox2)):
-            histComp1 = cv2.compareHist(boundBox1, boundBox2, cv2.HISTCMP_BHATTACHARYYA)
-            histComp2 = cv2.compareHist(boundBox1, boundBox2, cv2.HISTCMP_BHATTACHARYYA)
-            histComp3 = cv2.compareHist(boundBox1, boundBox2, cv2.HISTCMP_BHATTACHARYYA)
+    for counterPrev, histPrev in enumerate(boundBoxesPreviousHist):
+        for counterCurr, histCurr in enumerate(boundBoxesCurrentHist):
+            histCompH = cv2.compareHist(histPrev[counterPrev][0], histCurr[counterCurr][0], cv2.HISTCMP_BHATTACHARYYA)
+            histCompS = cv2.compareHist(histPrev[counterPrev][1], histCurr[counterCurr][1], cv2.HISTCMP_BHATTACHARYYA)
+            histCompV = cv2.compareHist(histPrev[counterPrev][2], histCurr[counterCurr][2], cv2.HISTCMP_BHATTACHARYYA)
+
+            similarity = 1-((histCompH + histCompS + histCompV)/3)
+            similarityVect.append(similarity)
+
+    return similarityVect
 
 
 def computeProbability(imagePath, boundingBoxPath):
@@ -64,7 +71,7 @@ def computeProbability(imagePath, boundingBoxPath):
 
     for imageNumber in range(len(imagesPath)):
         coordinatesBoundingBoxes = []
-        histograms = []
+        histogramsCurrent = []
         imageName = boundingBoxFile.readline().rstrip("\n")
         image = cv2.imread(str(imagePath[imageNumber]))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -80,6 +87,9 @@ def computeProbability(imagePath, boundingBoxPath):
         boundingBoxNumber = boundingBoxFile.readline().rstrip("\n")
         # print(boundingBoxNumber)
 
+        if boundingBoxNumber == 0:
+            print('')
+
         for bb in range(int(boundingBoxNumber)):
             coordinates = boundingBoxFile.readline().rstrip("\n").split(" ")
             coordinatesBoundingBoxes.append(coordinates)
@@ -87,7 +97,10 @@ def computeProbability(imagePath, boundingBoxPath):
             y = int(float(coordinates[1]))
             w = int(float(coordinates[2]))
             h = int(float(coordinates[3]))
-            histograms.append(calcHistBoundBox(image[y:y+h, x:x+w]))
+            histogramsCurrent.append(calcHistBoundBox(image[y:y+h, x:x+w]))
+
+        comp = compareHistBoundBox(histogramsCurrent, histogramsCurrent)
+        print(comp)
 
 
 if __name__ == '__main__':
@@ -97,7 +110,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dataDir = Path(args.data_dir)
-    imagesDir = Path(os.path.join(dataDir, 'frames'))
+    imagesDir = Path(os.path.join(str(dataDir) + '/', 'frames'))
     boundingBoxDir = Path(os.path.join(dataDir, 'bboxes.txt'))
 
     imagesPath = sorted([image_path for image_path in imagesDir.iterdir() if image_path.name.endswith('.jpg')])
