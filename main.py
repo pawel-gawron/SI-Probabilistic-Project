@@ -77,9 +77,10 @@ def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGra
             similarityVect.append(similarity)
             # print(histCompH)
             # print("[histPrev[0]]: ", histPrev[0])
-        # print(len(boundBoxesPreviousHist) + 1)
-        # print([[0.3] + similarityVect])
+        print(len(boundBoxesPreviousHist) + 1)
+        print([[0.3] + similarityVect])
         factor = DiscreteFactor([str(counterCurr)], [len(boundBoxesPreviousHist) + 1], [[0.3] + similarityVect])
+        print(factor)
         # print("counterCurr:", counterCurr)
         factorGraph.add_factors(factor)
         factorGraph.add_edge(str(counterCurr),factor)
@@ -88,10 +89,11 @@ def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGra
 def computeProbability(imagePath, boundingBoxPath):
     imagesPath = imagePath
     boundingBoxFile = boundingBoxPath
-    boundingBoxNumberPrev = None
-    histogramsPrev = []
+    boundingBoxNumberPrev = 0
     histogramsCurrent = []
     probNewObject = 0.3
+    noBB = 0
+    histogramsPrevious = []
 
     for imageNumber in range(len(imagesPath)):
         coordinatesBoundingBoxes = []
@@ -106,33 +108,14 @@ def computeProbability(imagePath, boundingBoxPath):
         if not imageName:
             break
 
-        # print("imageName: ", imageName)
-
         boundingBoxNumber = boundingBoxFile.readline().rstrip("\n")
-        # print(boundingBoxNumber)
 
-        if boundingBoxNumber == 0:
-            boundingBoxNumberPrev = boundingBoxNumber
+        if boundingBoxNumber == "0":
+            print('')
+            noBB = 1
             continue
 
-        if boundingBoxNumberPrev == 0 or imageNumber == 0:
-            boundingBoxNumberPrev = boundingBoxNumber
-            histogramsPrev = histogramsCurrent
-
-            for _ in range(int(float(boundingBoxNumber))):
-                print("-1 ")
-                coordinates = boundingBoxFile.readline().rstrip("\n").split(" ")
-                x = int(float(coordinates[0]))
-                y = int(float(coordinates[1]))
-                w = int(float(coordinates[2]))
-                h = int(float(coordinates[3]))
-                histogramsCurrent.append(calcHistBoundBox(image[y:y+h, x:x+w]))
-            continue
-
-        histogramsPrev = histogramsCurrent
-        boundingBoxNumberPrev = boundingBoxNumber
-        histogramsCurrent = []
-        for bbObject in range(int(boundingBoxNumber)):
+        for bbObject in range(int(float(boundingBoxNumber))):
             nodes.append(str(bbObject))
             coordinates = boundingBoxFile.readline().rstrip("\n").split(" ")
             coordinatesBoundingBoxes.append(coordinates)
@@ -140,12 +123,19 @@ def computeProbability(imagePath, boundingBoxPath):
             y = int(float(coordinates[1]))
             w = int(float(coordinates[2]))
             h = int(float(coordinates[3]))
-            # print("bbObject: ", bbObject)
             histogramsCurrent.append(calcHistBoundBox(image[y:y+h, x:x+w]))
 
         factorGraph.add_nodes_from(nodes)
 
-        matrixSize = int(boundingBoxNumberPrev)+1
+        if noBB == 1:
+            noBB = 0
+            for i in range(int(float(boundingBoxNumber))):
+                print("-1", end=" ")
+            histogramsPrevious = histogramsCurrent
+            boundingBoxNumberPrev = boundingBoxNumber
+            continue
+
+        matrixSize = int(float(boundingBoxNumberPrev))+1
         nodesPossibilityMatrix = np.ones((matrixSize, matrixSize))
 
         for k in range(matrixSize):
@@ -153,9 +143,12 @@ def computeProbability(imagePath, boundingBoxPath):
                 if k == l:
                     nodesPossibilityMatrix[k][l] = 0
         nodesPossibilityMatrix[0][0] = 1
+        
+        histogramsPrevious = histogramsCurrent
+        boundingBoxNumberPrev = boundingBoxNumber
 
-        if boundingBoxNumberPrev != None or boundingBoxNumberPrev != 0:
-            compareHistBoundBox(histogramsCurrent, histogramsPrev, factorGraph)
+        if boundingBoxNumberPrev != "0" and imageNumber != 0:
+            compareHistBoundBox(histogramsCurrent, histogramsPrevious, factorGraph)
 
             for currentHistrogram, prevHistrogram in combinations(range(int(boundingBoxNumber)), 2):
                 factor = DiscreteFactor([str(currentHistrogram), str(prevHistrogram)], [matrixSize,
@@ -164,6 +157,9 @@ def computeProbability(imagePath, boundingBoxPath):
                 factorGraph.add_factors(factor)
                 factorGraph.add_edge(str(currentHistrogram), factor)
                 factorGraph.add_edge(str(prevHistrogram), factor)
+
+            # print(factorGraph)
+            # break
 
             BP = BeliefPropagation(factorGraph)
             BP.calibrate()
