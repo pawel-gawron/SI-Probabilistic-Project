@@ -71,6 +71,7 @@ def computeProbability(imagePath, boundingBoxPath):
     boundingBoxNumberPrev = None
     histogramsPrev = []
     histogramsCurrent = []
+    probNewObject = 0.3
 
     for imageNumber in range(len(imagesPath)):
         coordinatesBoundingBoxes = []
@@ -115,9 +116,23 @@ def computeProbability(imagePath, boundingBoxPath):
 
         factorGraph.add_nodes_from(nodes)
 
+        matrixSize = int(boundingBoxNumber)+1
+        nodesPossibilityMatrix = np.ones((matrixSize, matrixSize))
+
+        for k in range(matrixSize):
+            for l in range(matrixSize):
+                if k == l:
+                    nodesPossibilityMatrix[k][l] = 0
+        nodesPossibilityMatrix[0][0] = 1
+
         if boundingBoxNumberPrev != None:
             comp = compareHistBoundBox(histogramsPrev, histogramsCurrent)
             print(comp)
+
+            # for i in range(len(matrixSize)):
+            #     for j in range(len(matrixSize)):
+
+        
 
 
 if __name__ == '__main__':
