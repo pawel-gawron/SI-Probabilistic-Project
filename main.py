@@ -49,7 +49,7 @@ def calcHistBoundBox(boundBox):
     # plt.axis('off')
     # plt.show()
 
-    return [histH, histS, histV]
+    return [histH, histS]
 
 def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGraph):
     # print("boundBoxesPreviousHist: ", len(boundBoxesPreviousHist))
@@ -67,20 +67,20 @@ def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGra
             # histCompV = cv2.compareHist(boundBoxesPreviousHist[i][2], boundBoxesCurrentHist[j][2], cv2.HISTCMP_BHATTACHARYYA)
             histCompH = cv2.compareHist(histPrev[0], histCurr[0], cv2.HISTCMP_CORREL)
             histCompS = cv2.compareHist(histPrev[1], histCurr[1], cv2.HISTCMP_CORREL)
-            histCompV = cv2.compareHist(histPrev[2], histCurr[2], cv2.HISTCMP_CORREL)
+            # histCompV = cv2.compareHist(histPrev[2], histCurr[2], cv2.HISTCMP_CORREL)
             # plt.plot(histPrev,color = 'blue')
             # plt.show()
 
-            similarity = (histCompH + histCompS + histCompV)/3
+            similarity = (histCompH + histCompS)/2
             if similarity <= 0.0:
                 similarity = 0.01
             similarityVect.append(similarity)
             # print(histCompH)
             # print("[histPrev[0]]: ", histPrev[0])
-        print(len(boundBoxesPreviousHist) + 1)
-        print([[0.3] + similarityVect])
+        # print(len(boundBoxesPreviousHist) + 1)
+        # print([[0.3] + similarityVect])
         factor = DiscreteFactor([str(counterCurr)], [len(boundBoxesPreviousHist) + 1], [[0.3] + similarityVect])
-        print(factor)
+        # print(factor)
         # print("counterCurr:", counterCurr)
         factorGraph.add_factors(factor)
         factorGraph.add_edge(str(counterCurr),factor)
@@ -103,17 +103,18 @@ def computeProbability(imagePath, boundingBoxPath):
         image = cv2.imread(str(imagePath[imageNumber]))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-        # print(imageName)
-
-        if not imageName:
-            break
-
         boundingBoxNumber = boundingBoxFile.readline().rstrip("\n")
+        # print(imageName)
+        # print("boundingBoxNumber: ", boundingBoxNumber)
+
+        histogramsPrevious = histogramsCurrent
+        boundingBoxNumberPrev = boundingBoxNumber
 
         if boundingBoxNumber == "0":
             print('')
             noBB = 1
             continue
+        histogramsCurrent = []
 
         for bbObject in range(int(float(boundingBoxNumber))):
             nodes.append(str(bbObject))
@@ -131,11 +132,11 @@ def computeProbability(imagePath, boundingBoxPath):
             noBB = 0
             for i in range(int(float(boundingBoxNumber))):
                 print("-1", end=" ")
-            histogramsPrevious = histogramsCurrent
-            boundingBoxNumberPrev = boundingBoxNumber
+            # histogramsPrevious = histogramsCurrent
+            # boundingBoxNumberPrev = boundingBoxNumber
             continue
 
-        matrixSize = int(float(boundingBoxNumberPrev))+1
+        matrixSize = int(float(len(histogramsPrevious)))+1
         nodesPossibilityMatrix = np.ones((matrixSize, matrixSize))
 
         for k in range(matrixSize):
@@ -143,9 +144,8 @@ def computeProbability(imagePath, boundingBoxPath):
                 if k == l:
                     nodesPossibilityMatrix[k][l] = 0
         nodesPossibilityMatrix[0][0] = 1
-        
-        histogramsPrevious = histogramsCurrent
-        boundingBoxNumberPrev = boundingBoxNumber
+
+        # print("matrixSize: ", matrixSize)
 
         if boundingBoxNumberPrev != "0" and imageNumber != 0:
             compareHistBoundBox(histogramsCurrent, histogramsPrevious, factorGraph)
@@ -158,23 +158,20 @@ def computeProbability(imagePath, boundingBoxPath):
                 factorGraph.add_edge(str(currentHistrogram), factor)
                 factorGraph.add_edge(str(prevHistrogram), factor)
 
-            # print(factorGraph)
-            # break
+            print(factorGraph)
+            break
 
-            BP = BeliefPropagation(factorGraph)
-            BP.calibrate()
+            beliefPropagation = BeliefPropagation(factorGraph)
+            beliefPropagation.calibrate()
 
-            pre_result = (BP.map_query(factorGraph.get_variable_nodes(),show_progress=False))
-            pre_result2 = OrderedDict(sorted(pre_result.items()))
-            result = list(pre_result2.values())
-            final_result = []
+            result = (beliefPropagation.map_query(factorGraph.get_variable_nodes(),show_progress=False))
+            orderedResult = OrderedDict(sorted(result.items()))
+            result = list(orderedResult.values())
+            probabilityResult = []
             for i in range(len(result)):
                 value = result[i] - 1
-                final_result.append(value)
-            print(*final_result,sep = ' ')
-
-        
-
+                probabilityResult.append(value)
+            print(*probabilityResult,sep = ' ')
 
 if __name__ == '__main__':
 
@@ -191,8 +188,3 @@ if __name__ == '__main__':
     file = open(boundingBoxDir, 'r')
 
     computeProbability(imagesPath, file)
-    # for image_path in imagesPath:
-    #     image = cv2.imread(str(image_path))
-    #     if image is None:
-    #         print(f'Error loading image {image_path}')
-    #         continue
