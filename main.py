@@ -54,10 +54,11 @@ def calcHistBoundBox(boundBox):
 def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGraph):
     # print("boundBoxesPreviousHist: ", len(boundBoxesPreviousHist))
     # print("boundBoxesCurrentHist: ", len(boundBoxesCurrentHist))
-    # print("boundBoxesPreviousHist: ", boundBoxesPreviousHist)
+    # print("boundBoxesPreviousHist: ", len(boundBoxesPreviousHist))
 
     for counterCurr, histCurr in enumerate(boundBoxesCurrentHist):
         similarityVect = []
+        # print("i: ", counterCurr)
         for counterPrev, histPrev in enumerate(boundBoxesPreviousHist):
     # for i in range(len(boundBoxesCurrentHist)):
     #     for j in range(len(boundBoxesPreviousHist)):
@@ -80,6 +81,7 @@ def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGra
         # print(len(boundBoxesPreviousHist) + 1)
         # print([[0.3] + similarityVect])
         factor = DiscreteFactor([str(counterCurr)], [len(boundBoxesPreviousHist) + 1], [[0.3] + similarityVect])
+        # print("factor: ", factor)
         # print(factor)
         # print("counterCurr:", counterCurr)
         factorGraph.add_factors(factor)
@@ -147,7 +149,7 @@ def computeProbability(imagePath, boundingBoxPath):
 
         # print("matrixSize: ", matrixSize)
 
-        if boundingBoxNumberPrev != "0" and imageNumber != 0:
+        if histogramsPrevious != 0:
             compareHistBoundBox(histogramsCurrent, histogramsPrevious, factorGraph)
 
             for currentHistrogram, prevHistrogram in combinations(range(int(boundingBoxNumber)), 2):
@@ -158,8 +160,8 @@ def computeProbability(imagePath, boundingBoxPath):
                 factorGraph.add_edge(str(currentHistrogram), factor)
                 factorGraph.add_edge(str(prevHistrogram), factor)
 
-            print(factorGraph)
-            break
+            # print(factorGraph)
+            # break
 
             beliefPropagation = BeliefPropagation(factorGraph)
             beliefPropagation.calibrate()
