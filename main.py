@@ -51,7 +51,7 @@ def calcHistBoundBox(boundBox):
 
     return [histH, histS]
 
-def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGraph):
+def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGraph, newObjProb):
     # print("boundBoxesPreviousHist: ", len(boundBoxesPreviousHist))
     # print("boundBoxesCurrentHist: ", len(boundBoxesCurrentHist))
     # print("boundBoxesPreviousHist: ", len(boundBoxesPreviousHist))
@@ -80,7 +80,7 @@ def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGra
             # print("[histPrev[0]]: ", histPrev[0])
         # print(len(boundBoxesPreviousHist) + 1)
         # print([[0.3] + similarityVect])
-        factor = DiscreteFactor([str(counterCurr)], [len(boundBoxesPreviousHist) + 1], [[0.3] + similarityVect])
+        factor = DiscreteFactor([str(counterCurr)], [len(boundBoxesPreviousHist) + 1], [[newObjProb] + similarityVect])
         # print("factor: ", factor)
         # print(factor)
         # print("counterCurr:", counterCurr)
@@ -101,7 +101,7 @@ def computeProbability(imagePath, boundingBoxPath):
         coordinatesBoundingBoxes = []
         nodes = []
         factorGraph = FactorGraph()
-        imageName = boundingBoxFile.readline().rstrip("\n")
+        _ = boundingBoxFile.readline().rstrip("\n")
         image = cv2.imread(str(imagePath[imageNumber]))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
@@ -134,8 +134,6 @@ def computeProbability(imagePath, boundingBoxPath):
             noBB = 0
             for i in range(int(float(boundingBoxNumber))):
                 print("-1", end=" ")
-            # histogramsPrevious = histogramsCurrent
-            # boundingBoxNumberPrev = boundingBoxNumber
             continue
 
         matrixSize = int(float(len(histogramsPrevious)))+1
@@ -150,7 +148,7 @@ def computeProbability(imagePath, boundingBoxPath):
         # print("matrixSize: ", matrixSize)
 
         if histogramsPrevious != 0:
-            compareHistBoundBox(histogramsCurrent, histogramsPrevious, factorGraph)
+            compareHistBoundBox(histogramsCurrent, histogramsPrevious, factorGraph, probNewObject)
 
             for currentHistrogram, prevHistrogram in combinations(range(int(boundingBoxNumber)), 2):
                 factor = DiscreteFactor([str(currentHistrogram), str(prevHistrogram)], [matrixSize,
