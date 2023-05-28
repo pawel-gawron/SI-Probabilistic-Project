@@ -77,10 +77,10 @@ def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGra
             similarityVect.append(similarity)
             # print(histCompH)
             # print("[histPrev[0]]: ", histPrev[0])
-        print(len(boundBoxesPreviousHist) + 1)
-        print([[0.3] + similarityVect])
+        # print(len(boundBoxesPreviousHist) + 1)
+        # print([[0.3] + similarityVect])
         factor = DiscreteFactor([str(counterCurr)], [len(boundBoxesPreviousHist) + 1], [[0.3] + similarityVect])
-        print(factor)
+        # print("counterCurr:", counterCurr)
         factorGraph.add_factors(factor)
         factorGraph.add_edge(str(counterCurr),factor)
 
@@ -133,7 +133,7 @@ def computeProbability(imagePath, boundingBoxPath):
         boundingBoxNumberPrev = boundingBoxNumber
         histogramsCurrent = []
         for bbObject in range(int(boundingBoxNumber)):
-            nodes.append("Camera_object_" + str(bbObject))
+            nodes.append(str(bbObject))
             coordinates = boundingBoxFile.readline().rstrip("\n").split(" ")
             coordinatesBoundingBoxes.append(coordinates)
             x = int(float(coordinates[0]))
@@ -155,31 +155,27 @@ def computeProbability(imagePath, boundingBoxPath):
         nodesPossibilityMatrix[0][0] = 1
 
         if boundingBoxNumberPrev != None or boundingBoxNumberPrev != 0:
-            comp = compareHistBoundBox(histogramsCurrent, histogramsPrev, factorGraph)
-            # print(comp)
+            compareHistBoundBox(histogramsCurrent, histogramsPrev, factorGraph)
 
-            # for current_histrogram1, current_histrogram2 in combinations(range(int(boundingBoxNumber)), 2):
-            #     tmp = DiscreteFactor([str(current_histrogram1), str(current_histrogram2)], [matrixSize,
-            #                                                                             matrixSize],
-            #                                                                             nodesPossibilityMatrix)
-            #     factorGraph.add_factors(tmp)
-            #     factorGraph.add_edge(str(current_histrogram1), tmp)
-            #     factorGraph.add_edge(str(current_histrogram2), tmp)
+            for currentHistrogram, prevHistrogram in combinations(range(int(boundingBoxNumber)), 2):
+                factor = DiscreteFactor([str(currentHistrogram), str(prevHistrogram)], [matrixSize,
+                                                                                        matrixSize],
+                                                                                        nodesPossibilityMatrix)
+                factorGraph.add_factors(factor)
+                factorGraph.add_edge(str(currentHistrogram), factor)
+                factorGraph.add_edge(str(prevHistrogram), factor)
 
-            # # for i in range(len(matrixSize)):
-            # #     for j in range(len(matrixSize)):
+            BP = BeliefPropagation(factorGraph)
+            BP.calibrate()
 
-            # BP = BeliefPropagation(factorGraph)
-            # BP.calibrate()
-
-            # pre_result = (BP.map_query(factorGraph.get_variable_nodes(),show_progress=False))
-            # pre_result2 = OrderedDict(sorted(pre_result.items()))
-            # result = list(pre_result2.values())
-            # final_result = []
-            # for i in range(len(result)):
-            #     value = result[i] - 1
-            #     final_result.append(value)
-            # print(*final_result,sep = ' ')
+            pre_result = (BP.map_query(factorGraph.get_variable_nodes(),show_progress=False))
+            pre_result2 = OrderedDict(sorted(pre_result.items()))
+            result = list(pre_result2.values())
+            final_result = []
+            for i in range(len(result)):
+                value = result[i] - 1
+                final_result.append(value)
+            print(*final_result,sep = ' ')
 
         
 
