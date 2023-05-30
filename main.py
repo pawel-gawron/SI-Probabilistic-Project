@@ -139,10 +139,7 @@ def computeProbability(imagePath, boundingBoxPath):
         matrixSize = int(float(len(histogramsPrevious)))+1
         nodesPossibilityMatrix = np.ones((matrixSize, matrixSize))
 
-        for k in range(matrixSize):
-            for l in range(matrixSize):
-                if k == l:
-                    nodesPossibilityMatrix[k][l] = 0
+        nodesPossibilityMatrix = [0 if k == l else nodesPossibilityMatrix[k][l] for k in range(matrixSize) for l in range(matrixSize)]
         nodesPossibilityMatrix[0][0] = 1
 
         # print("matrixSize: ", matrixSize)
