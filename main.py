@@ -83,14 +83,11 @@ def computeProbability(imagePath, boundingBoxPath):
             beliefPropagation = BeliefPropagation(factorGraph)
             beliefPropagation.calibrate()
 
-            result = (beliefPropagation.map_query(factorGraph.get_variable_nodes(),show_progress=False))
-            orderedResult = OrderedDict(sorted(result.items()))
-            result = list(orderedResult.values())
-            probabilityResult = []
-            for i in range(len(result)):
-                value = result[i] - 1
-                probabilityResult.append(value)
-            print(*probabilityResult,sep = ' ')
+            result = (beliefPropagation.map_query(factorGraph.get_variable_nodes()))
+            sorted_keys = sorted(result.keys())
+            # values = list(result.values())
+            values = [result[key] for key in sorted_keys]
+            print(*([x - 1 for x in values]), sep=" ")
 
 if __name__ == '__main__':
 

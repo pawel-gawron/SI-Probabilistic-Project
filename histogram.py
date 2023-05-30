@@ -48,8 +48,9 @@ class Histogram:
             for counterPrev, histPrev in enumerate(boundBoxesPreviousHist):
                 histCompH = cv2.compareHist(histPrev[0], histCurr[0], cv2.HISTCMP_CORREL)
                 histCompS = cv2.compareHist(histPrev[1], histCurr[1], cv2.HISTCMP_CORREL)
+                histCompGray = cv2.compareHist(histPrev[2], histCurr[2], cv2.HISTCMP_CORREL)
 
-                similarity = (histCompH + histCompS)/2
+                similarity = (histCompH + histCompS + histCompGray)/3
                 if similarity <= 0.0:
                     similarity = 0.01
                 similarityVect.append(similarity)
