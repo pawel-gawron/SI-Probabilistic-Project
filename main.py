@@ -3,6 +3,7 @@ from pgmpy.factors.discrete import TabularCPD
 from pgmpy.inference import VariableElimination, BeliefPropagation
 from pgmpy.factors.discrete import JointProbabilityDistribution, DiscreteFactor
 from collections import OrderedDict
+from histogram import Histogram
 
 from pathlib import Path
 import numpy as np
@@ -11,86 +12,51 @@ import os
 import argparse
 import matplotlib.pyplot as plt
 from itertools import combinations
-
-def calcHistBoundBox(boundBox):
-    h_ranges = [0, 180]
-    s_ranges = [0, 256]
-    v_ranges = [0, 256]
-
-    h_bins = 50
-    s_bins = 60
-    v_bins = 60
-
-    boundBox = cv2.resize(boundBox, (500, 500))
-
-    histH = cv2.calcHist([boundBox],[0], None, [h_bins], h_ranges, accumulate=False)
-    cv2.normalize(histH, histH, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32FC1)
-
-    histS = cv2.calcHist([boundBox],[1], None, [s_bins], s_ranges, accumulate=False)
-    cv2.normalize(histS, histS, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32FC1)
-
-    histV = cv2.calcHist([boundBox],[2], None, [v_bins], v_ranges, accumulate=False)
-    cv2.normalize(histV, histV, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32FC1)
-
-    return [histH, histS]
-
-def compareHistBoundBox(boundBoxesCurrentHist, boundBoxesPreviousHist, factorGraph, newObjProb):
-
-    for counterCurr, histCurr in enumerate(boundBoxesCurrentHist):
-        similarityVect = []
-        for counterPrev, histPrev in enumerate(boundBoxesPreviousHist):
-            histCompH = cv2.compareHist(histPrev[0], histCurr[0], cv2.HISTCMP_CORREL)
-            histCompS = cv2.compareHist(histPrev[1], histCurr[1], cv2.HISTCMP_CORREL)
-
-            similarity = (histCompH + histCompS)/2
-            if similarity <= 0.0:
-                similarity = 0.01
-            similarityVect.append(similarity)
-
-        factor = DiscreteFactor([str(counterCurr)], [len(boundBoxesPreviousHist) + 1], [[newObjProb] + similarityVect])
-        factorGraph.add_factors(factor)
-        factorGraph.add_edge(str(counterCurr),factor)
+from compareHistograms import compareHistBoundBox
+from boundBox import BoundBox
 
 
 def computeProbability(imagePath, boundingBoxPath):
     imagesPath = imagePath
     boundingBoxFile = boundingBoxPath
-    boundingBoxNumberPrev = 0
     histogramsCurrent = []
+    boundBoxCurrent = []
     probNewObject = 0.3
     noBB = 0
     histogramsPrevious = []
 
     for imageNumber in range(len(imagesPath)):
-        coordinatesBoundingBoxes = []
         nodes = []
+        coordinatesBoundingBoxes = []
         factorGraph = FactorGraph()
         _ = boundingBoxFile.readline().rstrip("\n")
         image = cv2.imread(str(imagePath[imageNumber]))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
         boundingBoxNumber = boundingBoxFile.readline().rstrip("\n")
 
         histogramsPrevious = histogramsCurrent
-        boundingBoxNumberPrev = boundingBoxNumber
 
         if boundingBoxNumber == "0":
             print('')
             noBB = 1
             continue
         histogramsCurrent = []
+        boundBoxCurrent = []
 
-        for bbObject in range(int(float(boundingBoxNumber))):
-            nodes.append(str(bbObject))
-            coordinates = boundingBoxFile.readline().rstrip("\n").split(" ")
-            coordinatesBoundingBoxes.append(coordinates)
-            x = int(float(coordinates[0]))
-            y = int(float(coordinates[1]))
-            w = int(float(coordinates[2]))
-            h = int(float(coordinates[3]))
-            histogramsCurrent.append(calcHistBoundBox(image[y:y+h, x:x+w]))
+        for _ in range(int(float(boundingBoxNumber))):
+            coordinatesBoundingBoxes.append(boundingBoxFile.readline().rstrip("\n").split(" "))
+
+        boundBox = BoundBox(coordinatesBoundingBoxes, image)
+        boundBox.computeBoundBox()
+
+        boundBoxCurrent = boundBox.returnBoundBox()
+        nodes = boundBox.returnNodes()
 
         factorGraph.add_nodes_from(nodes)
+
+        histogram = Histogram(boundBoxCurrent, probNewObject)
+
+        histogramsCurrent = histogram.calcHistBoundBox()
 
         if noBB == 1:
             noBB = 0
@@ -101,7 +67,7 @@ def computeProbability(imagePath, boundingBoxPath):
         matrixSize = int(float(len(histogramsPrevious)))+1
         nodesPossibilityMatrix = np.ones((matrixSize, matrixSize))
 
-        nodesPossibilityMatrix = [0 if k == l else nodesPossibilityMatrix[k][l] for k in range(matrixSize) for l in range(matrixSize)]
+        nodesPossibilityMatrix = [[0 if row == column else nodesPossibilityMatrix[row][column] for row in range(matrixSize)] for column in range(matrixSize)]
         nodesPossibilityMatrix[0][0] = 1
 
         if histogramsPrevious != 0:
