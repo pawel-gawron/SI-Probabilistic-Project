@@ -1,7 +1,6 @@
-from pgmpy.models import BayesianModel, FactorGraph
-from pgmpy.factors.discrete import TabularCPD
-from pgmpy.inference import VariableElimination, BeliefPropagation
-from pgmpy.factors.discrete import JointProbabilityDistribution, DiscreteFactor
+from pgmpy.models import FactorGraph
+from pgmpy.inference import BeliefPropagation
+from pgmpy.factors.discrete import DiscreteFactor
 from collections import OrderedDict
 from histogram import Histogram
 
@@ -10,9 +9,7 @@ import numpy as np
 import cv2
 import os
 import argparse
-import matplotlib.pyplot as plt
 from itertools import combinations
-from compareHistograms import compareHistBoundBox
 from boundBox import BoundBox
 
 
@@ -54,8 +51,7 @@ def computeProbability(imagePath, boundingBoxPath):
 
         factorGraph.add_nodes_from(nodes)
 
-        histogram = Histogram(boundBoxCurrent, probNewObject)
-
+        histogram = Histogram(boundBoxCurrent, probNewObject, factorGraph)
         histogramsCurrent = histogram.calcHistBoundBox()
 
         if noBB == 1:
@@ -71,7 +67,7 @@ def computeProbability(imagePath, boundingBoxPath):
         nodesPossibilityMatrix[0][0] = 1
 
         if histogramsPrevious != 0:
-            compareHistBoundBox(histogramsCurrent, histogramsPrevious, factorGraph, probNewObject)
+            factorGraph = histogram.compareHistBoundBox(histogramsCurrent, histogramsPrevious)
 
             for currentHistrogram, prevHistrogram in combinations(range(int(boundingBoxNumber)), 2):
                 factor = DiscreteFactor([str(currentHistrogram), str(prevHistrogram)], [matrixSize,

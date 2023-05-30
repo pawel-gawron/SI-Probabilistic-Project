@@ -4,9 +4,10 @@ from typing import List
 from pgmpy.factors.discrete import DiscreteFactor
 
 class Histogram:
-    def __init__(self, boundBox: List, newObjProb: float) -> None:
+    def __init__(self, boundBox: List, newObjProb: float, factorGraph: DiscreteFactor) -> None:
         self.boundBox_ = boundBox
         self.newObjProb_ = newObjProb
+        self.factorGraph_ = factorGraph
 
     def calcHistBoundBox(self) -> List:
         h_ranges = [0, 180]
@@ -39,3 +40,22 @@ class Histogram:
             hist.append([histH, histS, histGray])
 
         return hist
+    
+    def compareHistBoundBox(self, boundBoxesCurrentHist: List, boundBoxesPreviousHist: List) -> DiscreteFactor:
+
+        for counterCurr, histCurr in enumerate(boundBoxesCurrentHist):
+            similarityVect = []
+            for counterPrev, histPrev in enumerate(boundBoxesPreviousHist):
+                histCompH = cv2.compareHist(histPrev[0], histCurr[0], cv2.HISTCMP_CORREL)
+                histCompS = cv2.compareHist(histPrev[1], histCurr[1], cv2.HISTCMP_CORREL)
+
+                similarity = (histCompH + histCompS)/2
+                if similarity <= 0.0:
+                    similarity = 0.01
+                similarityVect.append(similarity)
+
+            factor = DiscreteFactor([str(counterCurr)], [len(boundBoxesPreviousHist) + 1], [[self.newObjProb_] + similarityVect])
+            self.factorGraph_.add_factors(factor)
+            self.factorGraph_.add_edge(str(counterCurr),factor)
+
+        return self.factorGraph_
