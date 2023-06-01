@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from typing import List
 from pgmpy.factors.discrete import DiscreteFactor
-from background import Background
 
 class Histogram:
     def __init__(self, boundBox: List, newObjProb: float, factorGraph: DiscreteFactor) -> None:
@@ -10,7 +9,7 @@ class Histogram:
         self.newObjProb_ = newObjProb
         self.factorGraph_ = factorGraph
 
-    def calcHistBoundBox(self, averagePixel: List) -> List:
+    def calcHistBoundBox(self) -> List:
         h_ranges = [0, 180]
         s_ranges = [0, 256]
         gray_ranges = [0, 256]
@@ -26,11 +25,8 @@ class Histogram:
             boundbox = cv2.resize(boundbox, (500, 500))
 
             boundboxHSV = cv2.cvtColor(boundbox, cv2.COLOR_BGR2HSV)
-            # boundboxHSV[:, :, 0] = np.clip(boundboxHSV[:, :, 0] - int(averagePixel[0]), 0, 180)
-            # boundboxHSV[:, :, 1] = np.clip(boundboxHSV[:, :, 1] - int(averagePixel[1]), 0, 256)
 
             boundboxGray = cv2.cvtColor(boundbox, cv2.COLOR_BGR2GRAY)
-            # boundboxGray = np.clip(boundboxGray - int(averagePixel[2]), 0, 255)
 
             histH = cv2.calcHist([boundboxHSV],[0], None, [h_bins], h_ranges, accumulate=False)
             cv2.normalize(histH, histH, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32FC1)
