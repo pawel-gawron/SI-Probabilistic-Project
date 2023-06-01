@@ -18,6 +18,7 @@ if __name__ == '__main__':
 
 
     file = open(boundingBoxDir, 'r')
+    result = []
 
     imagesPath = sorted([image_path for image_path in imagesDir.iterdir() if image_path.name.endswith('.jpg')])
 
@@ -32,7 +33,11 @@ if __name__ == '__main__':
             solution.append(coordinates[0])
             # print(coordinates[0], end=' ')
         print(*solution,sep = ' ')
+        result.append(solution)
+
+    with open('accuracy.txt', 'a') as file:
+        file.write('\n'.join(' '.join(sublist) for sublist in result) + '\n')
 
         # print("")
-        if imageNumber >=400:
-            break
+        # if imageNumber >=400:
+        #     break

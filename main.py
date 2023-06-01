@@ -11,6 +11,7 @@ import os
 import argparse
 from itertools import combinations
 from boundBox import BoundBox
+from background import Background
 
 
 def computeProbability(imagePath, boundingBoxPath):
@@ -21,13 +22,14 @@ def computeProbability(imagePath, boundingBoxPath):
     probNewObject = 0.3
     noBB = 0
     histogramsPrevious = []
+    background = Background()
 
     for imageNumber in range(len(imagesPath)):
         nodes = []
         coordinatesBoundingBoxes = []
         factorGraph = FactorGraph()
         _ = boundingBoxFile.readline().rstrip("\n")
-        image = cv2.imread(str(imagePath[imageNumber]))
+        image = cv2.imread(str(imagePath[imageNumber]), cv2.IMREAD_UNCHANGED)
 
         boundingBoxNumber = boundingBoxFile.readline().rstrip("\n")
 
@@ -51,8 +53,10 @@ def computeProbability(imagePath, boundingBoxPath):
 
         factorGraph.add_nodes_from(nodes)
 
+        averagePixel = background.calcMeanChannel(image)
+
         histogram = Histogram(boundBoxCurrent, probNewObject, factorGraph)
-        histogramsCurrent = histogram.calcHistBoundBox()
+        histogramsCurrent = histogram.calcHistBoundBox(averagePixel)
 
         if noBB == 1:
             noBB = 0
@@ -88,6 +92,9 @@ def computeProbability(imagePath, boundingBoxPath):
             # values = list(result.values())
             values = [result[key] for key in sorted_keys]
             print(*([x - 1 for x in values]), sep=" ")
+            with open('myScore.txt', 'a') as file:
+                file.write(' '.join(map(str, [x - 1 for x in values])) + '\n')
+
 
 if __name__ == '__main__':
 
