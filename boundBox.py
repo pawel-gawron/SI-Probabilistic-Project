@@ -19,8 +19,9 @@ class BoundBox:
         for iterator, coordinates in enumerate(self.coordinates_):
             self.nodes_.append(str(iterator))
             self.computeCoordinates(coordinates)
-            self.boundBoxStorage_.append(self.image_[self.y_ + int(self.h_/4) : self.y_ + int(3*(self.h_)/4),
-                                                     self.x_ + int(self.w_/4) : self.x_ + int(3*(self.w_)/4)])
+            # self.boundBoxStorage_.append(self.image_[self.y_ + int(self.h_/4) : self.y_ + int(3*(self.h_)/4),
+            #                                          self.x_ + int(self.w_/4) : self.x_ + int(3*(self.w_)/4)])
+            self.boundBoxStorage_.append(self.image_[self.y_:self.y_+self.h_, self.x_:self.x_+self.w_])
 
     def returnBoundBox(self) -> List:
         return self.boundBoxStorage_
