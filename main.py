@@ -11,8 +11,6 @@ import os
 import argparse
 from itertools import combinations
 from boundBox import BoundBox
-from background import Background
-
 
 def computeProbability(imagePath, boundingBoxPath):
     imagesPath = imagePath
@@ -22,7 +20,6 @@ def computeProbability(imagePath, boundingBoxPath):
     probNewObject = 0.3
     noBB = 0
     histogramsPrevious = []
-    background = Background()
 
     for imageNumber in range(len(imagesPath)):
         nodes = []
@@ -53,10 +50,8 @@ def computeProbability(imagePath, boundingBoxPath):
 
         factorGraph.add_nodes_from(nodes)
 
-        averagePixel = background.calcMeanChannel(image)
-
         histogram = Histogram(boundBoxCurrent, probNewObject, factorGraph)
-        histogramsCurrent = histogram.calcHistBoundBox(averagePixel)
+        histogramsCurrent = histogram.calcHistBoundBox()
 
         if noBB == 1:
             noBB = 0
@@ -89,9 +84,8 @@ def computeProbability(imagePath, boundingBoxPath):
 
             result = (beliefPropagation.map_query(factorGraph.get_variable_nodes()))
             sorted_keys = sorted(result.keys())
-            # values = list(result.values())
             values = [result[key] for key in sorted_keys]
-            print(*([x - 1 for x in values]), sep=" ")
+            # print(*([x - 1 for x in values]), sep=" ")
             with open('myScore.txt', 'a') as file:
                 file.write(' '.join(map(str, [x - 1 for x in values])) + '\n')
 
