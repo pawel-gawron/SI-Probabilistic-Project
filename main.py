@@ -85,7 +85,7 @@ def computeProbability(imagePath, boundingBoxPath):
             result = (beliefPropagation.map_query(factorGraph.get_variable_nodes()))
             sorted_keys = sorted(result.keys())
             values = [result[key] for key in sorted_keys]
-            # print(*([x - 1 for x in values]), sep=" ")
+            print(*([x - 1 for x in values]), sep=" ")
             with open('myScore.txt', 'a') as file:
                 file.write(' '.join(map(str, [x - 1 for x in values])) + '\n')
 
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dataDir = Path(args.data_dir)
-    imagesDir = Path(os.path.join(str(dataDir) + '/', 'frames'))
+    imagesDir = Path(os.path.join(str(dataDir), 'frames'))
     boundingBoxDir = Path(os.path.join(dataDir, 'bboxes.txt'))
 
     imagesPath = sorted([image_path for image_path in imagesDir.iterdir() if image_path.name.endswith('.jpg')])
