@@ -86,8 +86,8 @@ def computeProbability(imagePath, boundingBoxPath):
             sorted_keys = sorted(result.keys())
             values = [result[key] for key in sorted_keys]
             print(*([x - 1 for x in values]), sep=" ")
-            with open('myScore.txt', 'a') as file:
-                file.write(' '.join(map(str, [x - 1 for x in values])) + '\n')
+            # with open('myScore.txt', 'a') as file:
+            #     file.write(' '.join(map(str, [x - 1 for x in values])) + '\n')
 
 
 if __name__ == '__main__':
